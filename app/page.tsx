@@ -4,11 +4,12 @@ import { useState, useEffect } from "react"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { TrendingUp, Brain, BarChart3, AlertCircle, Command, Settings } from 'lucide-react'
+import { TrendingUp, Brain, BarChart3, AlertCircle, Command, Settings, Menu } from "lucide-react"
 import { ChatInterface } from "@/components/chat-interface"
 import { QuantPortfolio } from "@/components/quant-portfolio"
 import { QuantAnalytics } from "@/components/quant-analytics"
 import { RiskManagement } from "@/components/risk-management"
+import { RealTimeMarketData } from "@/components/real-time-market-data"
 import { ThemeToggle } from "@/components/theme-toggle"
 import { CommandPalette } from "@/components/command-palette"
 import { StatusBar } from "@/components/status-bar"
@@ -45,10 +46,14 @@ export default function QuantResearchCopilot() {
   const [activeTab, setActiveTab] = useState("chat")
   const [currentTime, setCurrentTime] = useState(new Date())
   const [marketStatus, setMarketStatus] = useState(getMarketStatus())
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
+  const [mounted, setMounted] = useState(false)
 
   const { holdings, riskAlerts, addHolding, removeHolding, updateHolding, dismissAlert } = usePortfolio()
 
   useEffect(() => {
+    setMounted(true)
+
     const timer = setInterval(() => {
       const now = new Date()
       setCurrentTime(now)
@@ -78,6 +83,10 @@ export default function QuantResearchCopilot() {
             e.preventDefault()
             setActiveTab("risk")
             break
+          case "5":
+            e.preventDefault()
+            setActiveTab("market")
+            break
         }
       }
     }
@@ -97,112 +106,147 @@ export default function QuantResearchCopilot() {
     volatility: h.volatility,
   }))
 
+  if (!mounted) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <Brain className="h-12 w-12 mx-auto mb-4 text-blue-600 animate-pulse" />
+          <p className="text-muted-foreground">Loading QuantPilot AI...</p>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/30 pb-6">
-      <div className="container mx-auto p-6">
+      <div className="container mx-auto p-4 sm:p-6">
         {/* Header */}
-        <div className="mb-8">
+        <div className="mb-6 sm:mb-8">
           <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 sm:gap-3">
               <div className="relative">
-                <Brain className="h-8 w-8 text-blue-600 dark:text-blue-400" />
-                <div className="absolute -top-1 -right-1 w-3 h-3 bg-green-500 rounded-full animate-pulse" />
+                <Brain className="h-6 w-6 sm:h-8 sm:w-8 text-blue-600 dark:text-blue-400" />
+                <div className="absolute -top-1 -right-1 w-2 h-2 sm:w-3 sm:h-3 bg-green-500 rounded-full animate-pulse" />
               </div>
               <div>
-                <h1 className="text-3xl font-bold text-foreground bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                <h1 className="text-xl sm:text-3xl font-bold text-foreground bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
                   QuantPilot AI
                 </h1>
-                <p className="text-sm text-muted-foreground">
-                  {currentTime.toLocaleTimeString()} • {marketStatus.status} ({marketStatus.reason})
+                <p className="text-xs sm:text-sm text-muted-foreground">
+                  {currentTime.toLocaleTimeString()} • {marketStatus.status}
                 </p>
-              </div>
-              <div className="flex gap-2 ml-4">
-                <Badge
-                  variant="secondary"
-                  className="animate-pulse bg-gradient-to-r from-green-100 to-blue-100 text-green-800"
-                >
-                  AI Portfolio Manager
-                </Badge>
-                <Badge variant="outline" className="border-blue-200">
-                  Professional
-                </Badge>
-                <Badge variant="outline" className="border-purple-200">
-                  Quantitative
-                </Badge>
               </div>
             </div>
 
             <div className="flex items-center gap-2">
+              {/* Mobile menu button */}
               <Button
                 variant="outline"
                 size="sm"
-                className="gap-2 bg-gradient-to-r from-background to-muted/20 hover:shadow-lg transition-all"
+                className="sm:hidden bg-transparent"
+                onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
               >
-                <Command className="h-4 w-4" />
-                <span className="hidden sm:inline">⌘K</span>
+                <Menu className="h-4 w-4" />
               </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                className="bg-gradient-to-r from-background to-muted/20 hover:shadow-lg transition-all"
-              >
-                <Settings className="h-4 w-4" />
-              </Button>
-              <ThemeToggle />
+
+              {/* Desktop controls */}
+              <div className="hidden sm:flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="gap-2 bg-gradient-to-r from-background to-muted/20 hover:shadow-lg transition-all"
+                >
+                  <Command className="h-4 w-4" />
+                  <span>⌘K</span>
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="bg-gradient-to-r from-background to-muted/20 hover:shadow-lg transition-all"
+                >
+                  <Settings className="h-4 w-4" />
+                </Button>
+                <ThemeToggle />
+              </div>
+
+              {/* Mobile theme toggle */}
+              <div className="sm:hidden">
+                <ThemeToggle />
+              </div>
             </div>
           </div>
 
-          <p className="text-muted-foreground">
-            AI-powered quantitative research platform with autonomous portfolio management capabilities
+          {/* Mobile badges */}
+          <div className="flex flex-wrap gap-1 sm:gap-2 mb-4">
+            <Badge
+              variant="secondary"
+              className="animate-pulse bg-gradient-to-r from-green-100 to-blue-100 text-green-800 dark:from-green-900 dark:to-blue-900 dark:text-green-200 text-xs"
+            >
+              AI Portfolio Manager
+            </Badge>
+            <Badge variant="outline" className="border-blue-200 text-xs">
+              Professional
+            </Badge>
+            <Badge variant="outline" className="border-purple-200 text-xs">
+              Live Data
+            </Badge>
+          </div>
+
+          <p className="text-sm text-muted-foreground">
+            AI-powered quantitative research platform with real-time market data
           </p>
         </div>
 
-        {/* Main Interface - Streamlined to 4 Essential Tabs */}
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-4 h-12 bg-gradient-to-r from-muted/50 to-muted/30 backdrop-blur-sm">
+        {/* Main Interface - Enhanced with Market Data Tab */}
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4 sm:space-y-6">
+          <TabsList className="grid w-full grid-cols-5 h-10 sm:h-12 bg-gradient-to-r from-muted/50 to-muted/30 backdrop-blur-sm text-xs sm:text-sm">
             <TabsTrigger
               value="chat"
-              className="flex items-center gap-2 text-sm data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500 data-[state=active]:to-blue-600 data-[state=active]:text-white transition-all"
+              className="flex items-center gap-1 sm:gap-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500 data-[state=active]:to-blue-600 data-[state=active]:text-white transition-all"
             >
-              <Brain className="h-4 w-4" />
+              <Brain className="h-3 w-3 sm:h-4 sm:w-4" />
               <span className="hidden sm:inline">AI Research</span>
               <span className="sm:hidden">AI</span>
             </TabsTrigger>
             <TabsTrigger
               value="portfolio"
-              className="flex items-center gap-2 text-sm data-[state=active]:bg-gradient-to-r data-[state=active]:from-green-500 data-[state=active]:to-green-600 data-[state=active]:text-white transition-all"
+              className="flex items-center gap-1 sm:gap-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-green-500 data-[state=active]:to-green-600 data-[state=active]:text-white transition-all"
             >
-              <TrendingUp className="h-4 w-4" />
+              <TrendingUp className="h-3 w-3 sm:h-4 sm:w-4" />
               <span className="hidden sm:inline">Portfolio</span>
               <span className="sm:hidden">Port</span>
             </TabsTrigger>
             <TabsTrigger
               value="analytics"
-              className="flex items-center gap-2 text-sm data-[state=active]:bg-gradient-to-r data-[state=active]:from-purple-500 data-[state=active]:to-purple-600 data-[state=active]:text-white transition-all"
+              className="flex items-center gap-1 sm:gap-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-purple-500 data-[state=active]:to-purple-600 data-[state=active]:text-white transition-all"
             >
-              <BarChart3 className="h-4 w-4" />
+              <BarChart3 className="h-3 w-3 sm:h-4 sm:w-4" />
               <span className="hidden sm:inline">Analytics</span>
               <span className="sm:hidden">Data</span>
             </TabsTrigger>
             <TabsTrigger
               value="risk"
-              className="flex items-center gap-2 text-sm data-[state=active]:bg-gradient-to-r data-[state=active]:from-red-500 data-[state=active]:to-red-600 data-[state=active]:text-white transition-all"
+              className="flex items-center gap-1 sm:gap-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-red-500 data-[state=active]:to-red-600 data-[state=active]:text-white transition-all"
             >
-              <AlertCircle className="h-4 w-4" />
+              <AlertCircle className="h-3 w-3 sm:h-4 sm:w-4" />
               <span className="hidden sm:inline">Risk</span>
               <span className="sm:hidden">Risk</span>
             </TabsTrigger>
+            <TabsTrigger
+              value="market"
+              className="flex items-center gap-1 sm:gap-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-orange-500 data-[state=active]:to-orange-600 data-[state=active]:text-white transition-all"
+            >
+              <TrendingUp className="h-3 w-3 sm:h-4 sm:w-4" />
+              <span className="hidden sm:inline">Market</span>
+              <span className="sm:hidden">Live</span>
+            </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="chat" className="space-y-6">
-            <ChatInterface 
-              onAddHolding={addHolding} 
-              onRemoveHolding={removeHolding} 
-              holdings={holdings}
-            />
+          <TabsContent value="chat" className="space-y-4 sm:space-y-6">
+            <ChatInterface onAddHolding={addHolding} onRemoveHolding={removeHolding} holdings={holdings} />
           </TabsContent>
 
-          <TabsContent value="portfolio" className="space-y-6">
+          <TabsContent value="portfolio" className="space-y-4 sm:space-y-6">
             <QuantPortfolio
               holdings={holdings}
               onAddHolding={addHolding}
@@ -211,12 +255,16 @@ export default function QuantResearchCopilot() {
             />
           </TabsContent>
 
-          <TabsContent value="analytics" className="space-y-6">
+          <TabsContent value="analytics" className="space-y-4 sm:space-y-6">
             <QuantAnalytics holdings={analyticsHoldings} />
           </TabsContent>
 
-          <TabsContent value="risk" className="space-y-6">
+          <TabsContent value="risk" className="space-y-4 sm:space-y-6">
             <RiskManagement holdings={holdings} riskAlerts={riskAlerts} onDismissAlert={dismissAlert} />
+          </TabsContent>
+
+          <TabsContent value="market" className="space-y-4 sm:space-y-6">
+            <RealTimeMarketData />
           </TabsContent>
         </Tabs>
       </div>
